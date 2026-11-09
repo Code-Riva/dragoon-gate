@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --brand-indigo: #6366f1;
+    --brand-indigo-light: #818cf8;
+    --brand-indigo-dark: #4338ca;
+    --bg-deep: #07080d;
+    --bg-surface: #0e111a;
+    --border-subtle: rgba(99, 102, 241, 0.16);
+  }
+
+  html {
+    color-scheme: dark;
+    background-color: var(--bg-deep);
+    color: #f1f5f9;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+}
+
+/* Reduced-motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Keyboard focus rings */
+:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 3px;
+}
