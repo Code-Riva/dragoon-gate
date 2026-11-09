@@ -112,7 +112,11 @@ Visit [http://localhost:3000](http://localhost:3000) in your browser.
 ## Verification & Test Methodology
 
 ### Automated Integration Tests (`npm test`)
-Automated tests in `tests/auth.test.js` exercise server verification logic using ephemeral cryptographic test keypairs (`viem/accounts`) and the process-local storage adapter:
+
+The test harness runs both in-memory logic tests and live Redis integration tests:
+
+#### 1. In-Memory Suite (`tests/auth.test.js` — 11 Tests Passed)
+Exercises server verification logic using ephemeral cryptographic test keypairs (`viem/accounts`) and the process-local storage adapter:
 1. **Successful Login**: Issues challenge, signs with ephemeral test private key, verifies SIWE message, issues session cookie, confirms storage record.
 2. **Tampered Signatures**: Rejects signatures signed by mismatched keys or malformed signature bytes (HTTP 401).
 3. **Mismatched Login Fields**: Rejects tampered domains, nonces, and chain IDs (HTTP 400).
@@ -124,6 +128,15 @@ Automated tests in `tests/auth.test.js` exercise server verification logic using
 9. **Protected Resource Enclosure**: Rejects unauthenticated direct access to `/api/dashboard/data` and `/dashboard` (HTTP 401 / redirect).
 10. **CSRF & Origin Verification**: Validates request origins against trusted configuration; blocks cross-origin state modification.
 11. **Fail-Closed Policy**: Proves startup throws and halts if `NODE_ENV=production` without `REDIS_URL`.
+
+#### 2. Live Redis Suite (`tests/redis.test.js` — 6 Tests Passed)
+Verified against a live Redis instance exercising `RedisStorageAdapter` and atomic Lua scripts:
+1. **Challenge Storage & TTL**: Challenge keys (`challenge:<id>`) are stored in real Redis with verified time-to-live (<= 300s) and serialized EIP-4361 parameters.
+2. **Cryptographic Login & Session Lifespan**: Successfully parses SIWE signatures, atomically consumes the challenge from Redis, and stores the session (`session:<tokenHash>`) with 24-hour TTL.
+3. **Concurrent Nonce Consumption**: 5 simultaneous verification attempts for the identical challenge execute against Redis via the custom `consumeChallengeAtomic` Lua script; exactly 1 succeeds and 4 fail closed (HTTP 400).
+4. **Replay Attack Defense**: Consumed challenge cannot be reused from Redis.
+5. **Session Revocation**: User sign-out immediately executes `DEL session:<tokenHash>` in Redis; subsequent cookie presentation returns `null` and rejects protected access.
+6. **Production Policy Compliance**: Confirms `NODE_ENV=production` with valid `REDIS_URL` instantiates `RedisStorageAdapter` and passes health checks without fail-closed exceptions.
 
 ### Manual Browser & Real Wallet Verification
 * **Discovery Protocol**: Verified multi-injected provider announcements via EIP-6963 across Brave Wallet, MetaMask, Phantom, and Coinbase Wallet.
